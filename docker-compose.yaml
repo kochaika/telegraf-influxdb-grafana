@@ -1,0 +1,72 @@
+# usage:
+# DOCKER_GROUP=$(stat -c '%g' /var/run/docker.sock) docker-compose ...
+# https_proxy=http://10.128.0.90:8080 http_proxy=http://10.128.0.90:8080 PASSWORD=xxx TOKEN=xxx DOCKER_GROUP=$(stat -c '%g' /var/run/docker.sock) docker-compose
+version: "3.3"
+services:
+
+  influxdb:
+    image: influxdb
+    container_name: influxdb
+    restart: always
+    ports:
+      - 8086:8086
+    networks:
+      - monitoring
+    volumes:
+      - influxdb2:/var/lib/influxdb2 
+    environment:
+      - http_proxy=http://10.128.0.90:8080
+      - https_proxy=http://10.128.0.90:8080
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=${PASSWORD}
+      - DOCKER_INFLUXDB_INIT_ORG=ETU
+      - DOCKER_INFLUXDB_INIT_BUCKET=telegraf
+      # - DOCKER_INFLUXDB_INIT_RETENTION=1w
+      - INFLUX_TOKEN=${TOKEN}
+
+  telegraf:
+    image: osll/telegraf-cuda
+    container_name: telegraf
+    restart: always
+    networks:
+      - monitoring    
+    user: "telegraf:${DOCKER_GROUP}"
+    runtime: nvidia
+    environment:
+      NVIDIA_VISIBLE_DEVICES: all
+      HOST_PROC: /rootfs/proc
+      HOST_SYS: /rootfs/sys
+      HOST_ETC: /rootfs/etc
+      #      http_proxy: http://10.128.0.90:8080
+      #      https_proxy: http://10.128.0.90:8080
+    volumes:
+     - ./telegraf.conf:/etc/telegraf/telegraf.conf:ro
+     - /usr/bin/nvidia-smi:/usr/bin/nvidia-smi:ro
+     - /var/run/docker.sock:/var/run/docker.sock:ro
+     - /sys:/rootfs/sys:ro
+     - /proc:/rootfs/proc:ro
+     - /etc:/rootfs/etc:ro
+
+  grafana:
+    image: grafana/grafana-oss:8.2.5-ubuntu
+    container_name: grafana
+    restart: always
+    ports:
+      - 3000:3000
+    networks:
+      - monitoring
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${TOKEN}
+            #      http_proxy: http://10.128.0.90:8080
+            #      https_proxy: http://10.128.0.90:8080
+    volumes:
+      - grafana-volume:/var/lib/grafana
+      - ./grafana/provisioning/datasources/:/etc/grafana/provisioning/datasources/
+
+
+networks:
+  monitoring:
+volumes:
+  influxdb2:
+  grafana-volume:

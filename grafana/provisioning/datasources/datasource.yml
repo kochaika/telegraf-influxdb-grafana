@@ -1,0 +1,23 @@
+# config file version
+apiVersion: 1
+
+# list of datasources that should be deleted from the database
+deleteDatasources:
+  - name: influxdb
+
+# list of datasources to insert/update depending
+# whats available in the database
+datasources:
+- name: influxdb
+  type: influxdb
+  access: proxy
+  url: http://influxdb:8086/
+  user: admin
+  secureJsonData:
+    password: 12345678
+  secureJsonData:
+    token: abcabcabc
+  jsonData:
+    version: Flux
+    organization: ETU
+    defaultBucket: telegraf
