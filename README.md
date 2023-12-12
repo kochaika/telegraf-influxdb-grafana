@@ -1,5 +1,5 @@
 # telegraf-influxdb-grafana
-Репозиторий с примером деплоя системы мониторинга сервера
+Репозиторий с примером деплоя системы мониторинга сервера  
 В docker-compose в дальнейшем вместо образа `osll/telegraf-cuda` следует использовать `mconcas/telegraf-nvidia:latest` либо `telegraf:1.20.4`
 
 ## Описание
